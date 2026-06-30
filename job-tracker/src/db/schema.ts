@@ -16,6 +16,7 @@ export const stageEnum = pgEnum('stage', [
 export const users = pgTable('users', {
   id        : text('id').primaryKey(),
   email     : text('email').notNull().unique(),
+  password  : text('password'),
   name      : text('name'),
   image     : text('image'),
   createdAt : timestamp('created_at').defaultNow().notNull(),
