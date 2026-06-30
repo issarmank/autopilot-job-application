@@ -1,65 +1,81 @@
-import Image from "next/image";
+import { redirect } from 'next/navigation'
+import Link from 'next/link'
+import { auth } from '@/lib/auth'
 
-export default function Home() {
+export const dynamic = 'force-dynamic'
+
+export default async function HomePage() {
+  const session = await auth()
+  if (session?.user?.id) redirect('/dashboard')
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
+    <main className="min-h-screen bg-white flex flex-col items-center">
+      <div className="w-full max-w-4xl px-8 flex flex-col flex-1">
+
+        {/* ── Navbar ── */}
+        <nav className="flex items-center justify-between h-14 border-b border-gray-100">
+          <div className="flex items-center gap-2.5">
+            <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
+              <rect width="26" height="26" rx="7" fill="#2563eb" />
+              <polyline points="7,17 11,12 14,15 19,9" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+            </svg>
+            <span className="font-bold text-[16px] tracking-tight text-slate-900">JobPilot</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <Link href="/auth" className="text-[13px] font-medium text-gray-600 hover:text-gray-900 transition-colors">
+              Sign in
+            </Link>
+            <Link href="/auth?tab=register" className="text-[13px] font-semibold bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors">
+              Get started
+            </Link>
+          </div>
+        </nav>
+
+        {/* ── Hero ── */}
+        <div className="flex-1 flex flex-col items-center justify-center text-center py-24">
+          <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-700 text-[12px] font-semibold px-3 py-1.5 rounded-full mb-8 border border-blue-100">
+            <span className="w-1.5 h-1.5 bg-blue-500 rounded-full inline-block" />
+            Free to use · No credit card required
+          </div>
+
+          <h1 className="text-5xl font-bold text-slate-900 tracking-tight max-w-2xl leading-tight mb-6">
+            Track every job application,{' '}
+            <span className="text-blue-600">without the spreadsheet.</span>
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+
+          <p className="text-lg text-slate-500 max-w-xl mb-10 leading-relaxed">
+            JobPilot keeps your job search organized. Add jobs from LinkedIn, GitHub,
+            or anywhere else — see your pipeline at a glance and never lose track of where you stand.
           </p>
+
+          <div className="flex items-center gap-4 flex-wrap justify-center">
+            <Link href="/auth?tab=register" className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-3.5 rounded-xl text-[15px] transition-colors shadow-sm">
+              Start tracking for free
+            </Link>
+            <Link href="/auth" className="text-[14px] font-medium text-gray-500 hover:text-gray-700 transition-colors">
+              Already have an account →
+            </Link>
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+
+        {/* ── Feature row ── */}
+        <div className="border-t border-gray-100 py-16">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-10 text-center">
+            {[
+              { icon: '📋', title: 'All your applications',  desc: "One place for every job you've saved, applied to, or interviewed for." },
+              { icon: '🔄', title: 'Track every stage',      desc: 'Move applications through stages — from saved to offer — with one click.' },
+              { icon: '🔍', title: 'Search and filter',      desc: 'Instantly find any role by title, company, stage, or source.' },
+            ].map(f => (
+              <div key={f.title}>
+                <div className="text-3xl mb-3">{f.icon}</div>
+                <h3 className="font-semibold text-slate-900 mb-2">{f.title}</h3>
+                <p className="text-[13px] text-slate-500 leading-relaxed">{f.desc}</p>
+              </div>
+            ))}
+          </div>
         </div>
-      </main>
-    </div>
-  );
+
+      </div>
+    </main>
+  )
 }
