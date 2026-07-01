@@ -1,5 +1,9 @@
 # Job Application Tracker
 
+<img width="2918" height="1210" alt="image" src="https://github.com/user-attachments/assets/7d8c4a27-530b-4025-842d-66faa508f3cc" />
+<img width="1812" height="1360" alt="image" src="https://github.com/user-attachments/assets/9381bb37-a706-4c89-a6f6-c086bc9d5904" />
+
+
 A personal job-application tracker with a list/table-based pipeline UI. Save job
 listings from LinkedIn (via a browser extension) or GitHub repos (via the GitHub
 REST API), and move applications through stages: **Saved → Applied → Phone
