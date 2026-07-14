@@ -6,7 +6,7 @@ import { signOut } from 'next-auth/react'
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type Stage = 'SAVED' | 'APPLIED' | 'PHONE_SCREEN' | 'INTERVIEW' | 'OFFER' | 'REJECTED'
-type SourceType = 'linkedin' | 'github' | 'manual'
+type SourceType = 'linkedin' | 'github' | 'manual' | 'extension' | 'adzuna'
 
 interface Job {
   id: string
@@ -70,16 +70,22 @@ const STAGE_DOTS: Record<Stage, string> = {
   REJECTED: '#ef4444',
 }
 
+const SOURCES: SourceType[] = ['linkedin', 'github', 'manual', 'extension', 'adzuna']
+
 const SOURCE_LABELS: Record<SourceType, string> = {
   linkedin: 'LinkedIn',
   github: 'GitHub',
   manual: 'Manual',
+  extension: 'Extension',
+  adzuna: 'Adzuna',
 }
 
 const SOURCE_COLORS: Record<SourceType, { bg: string; text: string }> = {
-  linkedin: { bg: '#e0f2fe', text: '#0369a1' },
-  github:   { bg: '#f1f5f9', text: '#475569' },
-  manual:   { bg: '#f5f3ff', text: '#6d28d9' },
+  linkedin:  { bg: '#e0f2fe', text: '#0369a1' },
+  github:    { bg: '#f1f5f9', text: '#475569' },
+  manual:    { bg: '#f5f3ff', text: '#6d28d9' },
+  extension: { bg: '#fce7f3', text: '#be185d' },
+  adzuna:    { bg: '#d1fae5', text: '#047857' },
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -205,11 +211,10 @@ export default function Dashboard({ user, initialApplications }: Props) {
     return acc
   }, {} as Record<Stage, number>)
 
-  const sourceCounts: Record<SourceType, number> = {
-    linkedin: apps.filter(a => a.job.sourceType === 'linkedin').length,
-    github:   apps.filter(a => a.job.sourceType === 'github').length,
-    manual:   apps.filter(a => a.job.sourceType === 'manual').length,
-  }
+  const sourceCounts = SOURCES.reduce((acc, src) => {
+    acc[src] = apps.filter(a => a.job.sourceType === src).length
+    return acc
+  }, {} as Record<SourceType, number>)
 
   // ── Sort helpers ─────────────────────────────────────────────────────────
 
@@ -376,7 +381,7 @@ export default function Dashboard({ user, initialApplications }: Props) {
             label="All sources" count={apps.length} active={!selectedSource}
             onClick={() => setSelectedSource(null)}
           />
-          {(['linkedin', 'github', 'manual'] as SourceType[]).map(src => (
+          {SOURCES.map(src => (
             <SidebarBtn
               key={src}
               label={SOURCE_LABELS[src]}
@@ -650,9 +655,7 @@ export default function Dashboard({ user, initialApplications }: Props) {
                 </Field>
                 <Field label="Source">
                   <select value={addForm.source} onChange={e => setAddForm(f => ({ ...f, source: e.target.value as SourceType }))} className={selectCls}>
-                    <option value="linkedin">LinkedIn</option>
-                    <option value="github">GitHub</option>
-                    <option value="manual">Manual</option>
+                    {SOURCES.map(src => <option key={src} value={src}>{SOURCE_LABELS[src]}</option>)}
                   </select>
                 </Field>
               </div>
