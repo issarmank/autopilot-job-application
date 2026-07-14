@@ -15,6 +15,13 @@
       "when": 1782853008535,
       "tag": "0001_typical_moon_knight",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1784060799500,
+      "tag": "0002_careful_zzzax",
+      "breakpoints": true
     }
   ]
 }
