@@ -1,0 +1,24 @@
+{
+  "manifest_version": 3,
+  "name": "JobPilot Apply Capture",
+  "version": "0.1.0",
+  "description": "Detects job applications on any site and saves them to your JobPilot tracker.",
+  "permissions": ["storage", "activeTab"],
+  "host_permissions": ["http://localhost:3000/*"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "exclude_matches": ["http://localhost:3000/*"],
+      "js": ["content-scripts/universal.js"],
+      "run_at": "document_idle",
+      "all_frames": true
+    }
+  ],
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_title": "JobPilot — save this job"
+  }
+}
