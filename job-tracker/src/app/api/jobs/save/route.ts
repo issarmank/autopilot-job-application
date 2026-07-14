@@ -12,7 +12,10 @@ const saveSchema = z.object({
   salaryMax   : z.number().nullable().optional(),
   description : z.string().nullable().optional(),
   sourceUrl   : z.string().url(),
-  sourceType  : z.enum(['linkedin', 'github', 'manual']),
+  sourceType  : z.enum(['linkedin', 'github', 'manual', 'extension', 'adzuna']),
+  // Optional initial stage — the universal extension sends APPLIED when it
+  // detected an actual form submission (vs. just an Apply-button click).
+  stage       : z.enum(['SAVED', 'APPLIED']).optional(),
 })
 
 export async function POST(request: NextRequest) {
@@ -47,12 +50,18 @@ export async function POST(request: NextRequest) {
       sourceType  : data.sourceType,
     }).returning()
 
-    await db.insert(applications).values({
-      jobId  : job.id,
-      userId : user.id,
-    })
+    const stage = data.stage ?? 'SAVED'
+    const [application] = await db.insert(applications).values({
+      jobId     : job.id,
+      userId    : user.id,
+      stage,
+      appliedAt : stage === 'APPLIED' ? new Date() : null,
+    }).returning()
 
-    return Response.json({ success: true, jobId: job.id }, { status: 201 })
+    return Response.json(
+      { success: true, jobId: job.id, applicationId: application.id },
+      { status: 201 },
+    )
   } catch (err) {
     console.error('Failed to save job:', err)
     return Response.json({ error: 'Internal server error' }, { status: 500 })
