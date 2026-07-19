@@ -12,7 +12,9 @@
 // browser rendered. The server never fetches job-site URLs.
 
 ;(() => {
-  const APPLY_TEXT = /\b(easy apply|apply now|apply|submit application|submit)\b/i
+  // Bare "submit" is NOT an apply signal — code judges, comment boxes and
+  // settings pages all have Submit buttons. Only apply-specific wording counts.
+  const APPLY_TEXT = /\b(easy apply|apply now|apply|submit (?:your )?application)\b/i
   const APPLY_URL = /\/(apply|application|applications)(\/|\?|#|$)/i
   const RAW_TEXT_LIMIT = 30000
 
@@ -133,11 +135,53 @@
     }
   }
 
+  // ── Job-page evidence ─────────────────────────────────────────────────────
+  // Apply/Submit buttons and /application URLs exist all over the web — code
+  // judges, OAuth settings, coupon forms. An apply action only counts when the
+  // page itself looks like a job posting or an application form.
+
+  const ATS_HOSTS = /(greenhouse\.io|lever\.co|myworkdayjobs\.com|ashbyhq\.com|smartrecruiters\.com|icims\.com|jobvite\.com|workable\.com|bamboohr\.com|recruitee\.com|breezy\.hr|teamtailor\.com|applytojob\.com)$/i
+  const JOB_PATH = /\/(jobs?|careers?|apply|applications?|positions?|vacanc(y|ies)|opportunit(y|ies)|postings?)(\/|$)/i
+  const JOB_PHRASES = [
+    'job description', 'responsibilities', 'qualifications', 'about the role',
+    'cover letter', 'resume', 'curriculum vitae', 'equal opportunity employer',
+    'hiring manager', 'employment type', 'salary range', 'we are hiring',
+  ]
+
+  function pageLooksLikeJob() {
+    // A schema.org JobPosting is decisive — no scoring needed.
+    if (extractFromJsonLd()) return true
+
+    let score = 0
+    if (ATS_HOSTS.test(location.hostname)) score += 2
+    if (JOB_PATH.test(location.pathname)) score += 2
+
+    const text = (document.body.innerText || '').slice(0, 20000).toLowerCase()
+    let phraseHits = 0
+    for (const phrase of JOB_PHRASES) {
+      if (text.includes(phrase)) phraseHits++
+    }
+    score += Math.min(phraseHits, 3)
+
+    // A file upload next to resume/CV wording is a strong application-form
+    // sign — ATS iframes often carry no other signal.
+    if (document.querySelector('input[type="file"]') && /resume|curriculum vitae|cover letter|\bcv\b/.test(text)) {
+      score += 2
+    }
+
+    return score >= 3
+  }
+
   // ── Apply detection ───────────────────────────────────────────────────────
 
   let lastCaptureAt = 0
 
   function capture(detectedVia) {
+    // Never capture pages that don't look like a job posting/application —
+    // this is what keeps Submit buttons on code judges, OAuth settings pages
+    // etc. from creating junk rows.
+    if (!pageLooksLikeJob()) return
+
     // A single Apply click can fire several heuristics at once — keep one capture.
     const now = Date.now()
     if (now - lastCaptureAt < 3000) return
@@ -196,8 +240,7 @@
   }, 1500)
 
   // ── Popup contract ────────────────────────────────────────────────────────
-  // The popup sends EXTRACT_JOB to read the current page on demand
-  // (same message contract the LinkedIn content script uses).
+  // The popup sends EXTRACT_JOB to read the current page on demand.
   chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     if (message && message.type === 'EXTRACT_JOB') {
       sendResponse(extractJob())

@@ -61,9 +61,7 @@ async function fillMissingFields(fields, rawText) {
   }
 }
 
-async function saveJob(capture, stage) {
-  const fields = await fillMissingFields(capture.fields || {}, capture.rawText)
-
+async function saveJob(capture, fields, stage) {
   const res = await fetch(`${API_BASE}/api/jobs/save`, {
     method      : 'POST',
     headers     : { 'Content-Type': 'application/json' },
@@ -123,9 +121,27 @@ async function handleCapture(capture, tabId) {
     }
   }
 
+  // Hard gate: even if the content script's heuristics fired, refuse to
+  // auto-save anything we can't name. A real posting yields a title and
+  // company (from the DOM or the LLM fallback); junk pages don't. The
+  // capture stays in storage so the popup's manual path still works.
+  let fields
   let res
   try {
-    res = await saveJob(capture, stage)
+    fields = await fillMissingFields(capture.fields || {}, capture.rawText)
+  } catch {
+    fields = capture.fields || {}
+  }
+  if (!fields.title || !fields.company) {
+    await setLastResult({
+      ok    : false,
+      error : 'Detected an apply click but couldn’t identify a job posting — open the popup to review and save manually.',
+    })
+    return
+  }
+
+  try {
+    res = await saveJob(capture, fields, stage)
   } catch {
     setBadge('!', '#b91c1c')
     await setLastResult({ ok: false, error: `Could not reach JobPilot at ${API_BASE}. Is the app running?` })
