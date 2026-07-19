@@ -12,7 +12,7 @@ const saveSchema = z.object({
   salaryMax   : z.number().nullable().optional(),
   description : z.string().nullable().optional(),
   sourceUrl   : z.string().url(),
-  sourceType  : z.enum(['linkedin', 'github', 'manual', 'extension', 'adzuna']),
+  sourceType  : z.enum(['github', 'manual', 'extension', 'adzuna']),
   // Optional initial stage — the universal extension sends APPLIED when it
   // detected an actual form submission (vs. just an Apply-button click).
   stage       : z.enum(['SAVED', 'APPLIED']).optional(),

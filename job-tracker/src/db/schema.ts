@@ -8,7 +8,7 @@ import {
 import { relations } from 'drizzle-orm'
 
 // 'extension' = Phase 3 universal apply-capture · 'adzuna' = Phase 4 internship recommendations
-export const sourceTypeEnum = pgEnum('source_type', ['linkedin', 'github', 'manual', 'extension', 'adzuna'])
+export const sourceTypeEnum = pgEnum('source_type', ['github', 'manual', 'extension', 'adzuna'])
 
 export const stageEnum = pgEnum('stage', [
   'SAVED', 'APPLIED', 'PHONE_SCREEN', 'INTERVIEW', 'OFFER', 'REJECTED',

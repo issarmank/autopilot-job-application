@@ -8,7 +8,7 @@ import { relDate } from '@/lib/format'
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type Stage = 'SAVED' | 'APPLIED' | 'PHONE_SCREEN' | 'INTERVIEW' | 'OFFER' | 'REJECTED'
-type SourceType = 'linkedin' | 'github' | 'manual' | 'extension' | 'adzuna'
+type SourceType = 'github' | 'manual' | 'extension' | 'adzuna'
 
 interface Job {
   id: string
@@ -72,10 +72,9 @@ const STAGE_DOTS: Record<Stage, string> = {
   REJECTED: '#ef4444',
 }
 
-const SOURCES: SourceType[] = ['linkedin', 'github', 'manual', 'extension', 'adzuna']
+const SOURCES: SourceType[] = ['github', 'manual', 'extension', 'adzuna']
 
 const SOURCE_LABELS: Record<SourceType, string> = {
-  linkedin: 'LinkedIn',
   github: 'GitHub',
   manual: 'Manual',
   extension: 'Extension',
@@ -83,7 +82,6 @@ const SOURCE_LABELS: Record<SourceType, string> = {
 }
 
 const SOURCE_COLORS: Record<SourceType, { bg: string; text: string }> = {
-  linkedin:  { bg: '#e0f2fe', text: '#0369a1' },
   github:    { bg: '#f1f5f9', text: '#475569' },
   manual:    { bg: '#f5f3ff', text: '#6d28d9' },
   extension: { bg: '#fce7f3', text: '#be185d' },
