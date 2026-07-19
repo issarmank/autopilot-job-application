@@ -1,4 +1,3 @@
-import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { auth } from '@/lib/auth'
 
@@ -6,7 +5,6 @@ export const dynamic = 'force-dynamic'
 
 export default async function HomePage() {
   const session = await auth()
-  if (session?.user?.id) redirect('/dashboard')
 
   return (
     <main className="min-h-screen bg-white flex flex-col items-center">
@@ -43,8 +41,8 @@ export default async function HomePage() {
             <span className="text-blue-600">without the spreadsheet.</span>
           </h1>
 
-          <p className="text-lg text-slate-500 max-w-xl mb-10 leading-relaxed">
-            JobPilot keeps your job search organized. Add jobs from LinkedIn, GitHub,
+          <p className="text-lg text-black max-w-xl mb-10 leading-relaxed">
+            JobPilot keeps your job search organized. Add jobs from GitHub
             or anywhere else — see your pipeline at a glance and never lose track of where you stand.
           </p>
 
@@ -57,24 +55,6 @@ export default async function HomePage() {
             </Link>
           </div>
         </div>
-
-        {/* ── Feature row ── */}
-        <div className="border-t border-gray-100 py-16">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-10 text-center">
-            {[
-              { icon: '📋', title: 'All your applications',  desc: "One place for every job you've saved, applied to, or interviewed for." },
-              { icon: '🔄', title: 'Track every stage',      desc: 'Move applications through stages — from saved to offer — with one click.' },
-              { icon: '🔍', title: 'Search and filter',      desc: 'Instantly find any role by title, company, stage, or source.' },
-            ].map(f => (
-              <div key={f.title}>
-                <div className="text-3xl mb-3">{f.icon}</div>
-                <h3 className="font-semibold text-slate-900 mb-2">{f.title}</h3>
-                <p className="text-[13px] text-slate-500 leading-relaxed">{f.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-
       </div>
     </main>
   )

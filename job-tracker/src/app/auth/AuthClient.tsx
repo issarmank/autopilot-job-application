@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { signIn } from 'next-auth/react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -15,13 +16,13 @@ import { Separator } from '@/components/ui/separator'
 function Logo() {
   return (
     <div className="flex justify-center mb-8">
-      <div className="flex items-center gap-2.5">
+      <Link href="/" className="flex items-center gap-2.5">
         <svg width="32" height="32" viewBox="0 0 26 26" fill="none">
           <rect width="26" height="26" rx="7" fill="#2563eb" />
           <polyline points="7,17 11,12 14,15 19,9" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
         </svg>
         <span className="font-bold text-xl tracking-tight text-slate-900">JobPilot</span>
-      </div>
+      </Link>
     </div>
   )
 }
