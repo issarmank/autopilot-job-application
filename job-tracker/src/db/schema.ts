@@ -56,3 +56,16 @@ export const applicationRelations = relations(applications, ({ one }) => ({
   job  : one(jobs,  { fields: [applications.jobId],  references: [jobs.id]  }),
   user : one(users, { fields: [applications.userId], references: [users.id] }),
 }))
+
+// A repo watched for new job postings — synced by the BullMQ worker on a
+// schedule, filtering rows to the last `lookbackDays` days each sync.
+export const watchedRepos = pgTable('watched_repos', {
+  id           : text('id').primaryKey().$defaultFn(() => crypto.randomUUID()),
+  repoUrl      : text('repo_url').notNull(),
+  owner        : text('owner').notNull(),
+  repo         : text('repo').notNull(),
+  lookbackDays : integer('lookback_days').default(14).notNull(),
+  lastSyncedAt : timestamp('last_synced_at'),
+  createdAt    : timestamp('created_at').defaultNow().notNull(),
+  userId       : text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+})

@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from 'react'
 import { signOut } from 'next-auth/react'
+import Link from 'next/link'
 import { relDate } from '@/lib/format'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -102,6 +103,12 @@ function initials(name: string | null, email: string): string {
   return (name ?? email).slice(0, 2).toUpperCase()
 }
 
+// GitHub repo URLs get the automated import flow (fetch + LLM extraction)
+// instead of manual field entry — see POST /api/jobs/github.
+function isGithubRepoUrl(url: string): boolean {
+  return /github\.com\/[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+/.test(url)
+}
+
 // ─── Small components ─────────────────────────────────────────────────────────
 
 function StagePill({ stage }: { stage: Stage }) {
@@ -145,6 +152,8 @@ export default function Dashboard({ user, initialApplications }: Props) {
   const [stageMenuId, setStageMenuId] = useState<string | null>(null)
   const [showAddModal, setShowAddModal] = useState(false)
   const [showUserMenu, setShowUserMenu] = useState(false)
+  const [isImporting, setIsImporting] = useState(false)
+  const [importError, setImportError] = useState<string | null>(null)
   const [addForm, setAddForm] = useState({
     title: '', company: '', location: '',
     salaryMin: '', salaryMax: '',
@@ -259,11 +268,43 @@ export default function Dashboard({ user, initialApplications }: Props) {
     }
   }
 
+  // GitHub repo URLs skip manual entry: the server fetches JOBS.md/README.md
+  // and extracts the fields. On any failure the modal stays open with the
+  // manual form still usable — never a dead end.
+  async function handleImportGithub() {
+    setIsImporting(true)
+    setImportError(null)
+    try {
+      const res = await fetch('/api/jobs/github', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ repoUrl: addForm.url }),
+      })
+      if (res.ok) {
+        setShowAddModal(false)
+        setAddForm({ title: '', company: '', location: '', salaryMin: '', salaryMax: '', stage: 'SAVED', source: 'manual', url: '' })
+        await refetch()
+        return
+      }
+      const body: unknown = await res.json().catch(() => null)
+      const serverError =
+        typeof body === 'object' && body !== null && 'error' in body && typeof (body as { error: unknown }).error === 'string'
+          ? (body as { error: string }).error
+          : 'Import failed'
+      setImportError(`${serverError} — you can still fill in the fields manually.`)
+    } catch {
+      setImportError('Could not reach the server — you can still fill in the fields manually.')
+    } finally {
+      setIsImporting(false)
+    }
+  }
+
   // ─────────────────────────────────────────────────────────────────────────
   // Render
   // ─────────────────────────────────────────────────────────────────────────
 
   const hasOpenMenu = !!(openMenuId || stageMenuId || showUserMenu)
+  const isGithubUrl = isGithubRepoUrl(addForm.url)
 
   return (
     <div className="flex flex-col h-screen bg-white" style={{ fontFamily: 'var(--font-geist-sans), system-ui, sans-serif' }}>
@@ -279,16 +320,22 @@ export default function Dashboard({ user, initialApplications }: Props) {
       {/* ── Navbar ────────────────────────────────────────────────────────── */}
       <nav className="flex items-center justify-between px-6 h-14 border-b border-gray-200 bg-white flex-shrink-0 relative z-20">
         {/* Logo */}
-        <div className="flex items-center gap-2.5">
+        <Link href="/" className="flex items-center gap-2.5">
           <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
             <rect width="26" height="26" rx="7" fill="#2563eb" />
             <polyline points="7,17 11,12 14,15 19,9" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
           </svg>
           <span className="font-bold text-[16px] tracking-tight text-slate-900">JobPilot</span>
-        </div>
+        </Link>
 
         {/* Right side */}
         <div className="flex items-center gap-2.5">
+          <Link
+            href="/dashboard/watched-repos"
+            className="text-[13px] font-medium text-gray-600 hover:text-gray-900 px-2"
+          >
+            Watched repos
+          </Link>
           <button
             onClick={() => { setShowAddModal(true); setShowUserMenu(false) }}
             className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-4 py-2 text-[13px] font-semibold transition-colors"
@@ -652,8 +699,28 @@ export default function Dashboard({ user, initialApplications }: Props) {
               </div>
 
               <Field label="Posting URL *">
-                <input type="url" value={addForm.url} onChange={e => setAddForm(f => ({ ...f, url: e.target.value }))} placeholder="https://…" className={inputCls} />
+                <input type="url" value={addForm.url} onChange={e => { setImportError(null); setAddForm(f => ({ ...f, url: e.target.value })) }} placeholder="https://" className={inputCls} />
               </Field>
+
+              {/* GitHub repo detected — offer the automated import flow */}
+              {isGithubUrl && !importError && (
+                <div className="flex items-start gap-2.5 px-3.5 py-3 bg-blue-50 border border-blue-100 rounded-lg">
+                  <svg className="mt-0.5 shrink-0" width="15" height="15" viewBox="0 0 16 16" fill="#1d4ed8">
+                    <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.42 7.42 0 014 0c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0016 8c0-4.42-3.58-8-8-8z" />
+                  </svg>
+                  <p className="text-[12px] text-blue-800 leading-relaxed">
+                    <span className="font-semibold">GitHub repo detected.</span>{' '}
+                    Import fetches the repo&apos;s JOBS.md or README.md and fills the fields automatically — no typing needed.
+                  </p>
+                </div>
+              )}
+
+              {/* Import failed — fall back to the manual form */}
+              {importError && (
+                <div className="px-3.5 py-3 bg-red-50 border border-red-100 rounded-lg text-[12px] text-red-700 leading-relaxed">
+                  {importError}
+                </div>
+              )}
             </div>
 
             {/* Footer */}
@@ -667,10 +734,23 @@ export default function Dashboard({ user, initialApplications }: Props) {
               <button
                 onClick={handleAddJob}
                 disabled={!addForm.title || !addForm.company || !addForm.url}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-lg text-[13px] font-semibold transition-colors"
+                className={`px-4 py-2 disabled:opacity-40 disabled:cursor-not-allowed rounded-lg text-[13px] font-semibold transition-colors ${
+                  isGithubUrl
+                    ? 'border border-gray-200 text-gray-700 hover:bg-gray-50'
+                    : 'bg-blue-600 hover:bg-blue-700 text-white'
+                }`}
               >
                 Add Job
               </button>
+              {isGithubUrl && (
+                <button
+                  onClick={handleImportGithub}
+                  disabled={isImporting}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed text-white rounded-lg text-[13px] font-semibold transition-colors"
+                >
+                  {isImporting ? 'Importing…' : 'Import from GitHub'}
+                </button>
+              )}
             </div>
           </div>
         </div>
