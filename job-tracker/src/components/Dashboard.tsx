@@ -3,7 +3,7 @@
 import { useState, useCallback } from 'react'
 import { signOut } from 'next-auth/react'
 import Link from 'next/link'
-import { relDate } from '@/lib/format'
+import { relDate, fmtSalary } from '@/lib/format'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -86,15 +86,6 @@ const SOURCE_COLORS: Record<SourceType, { bg: string; text: string }> = {
   manual:    { bg: '#f5f3ff', text: '#6d28d9' },
   extension: { bg: '#fce7f3', text: '#be185d' },
   adzuna:    { bg: '#d1fae5', text: '#047857' },
-}
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function fmtSalary(min: number | null, max: number | null): string {
-  if (!min && !max) return '—'
-  const f = (n: number) => `$${Math.round(n / 1000)}k`
-  if (min && max) return `${f(min)}–${f(max)}`
-  return min ? `${f(min)}+` : f(max!)
 }
 
 function initials(name: string | null, email: string): string {
@@ -328,6 +319,12 @@ export default function Dashboard({ user, initialApplications }: Props) {
 
         {/* Right side */}
         <div className="flex items-center gap-2.5">
+          <Link
+            href="/dashboard/internships"
+            className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-4 py-2 text-[13px] font-semibold transition-colors"
+          >
+            Internships
+          </Link>
           <Link
             href="/dashboard/watched-repos"
             className="text-[13px] font-medium text-gray-600 hover:text-gray-900 px-2"

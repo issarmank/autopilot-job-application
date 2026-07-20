@@ -128,3 +128,60 @@ export async function extractJobListFromText(rawText: string): Promise<Extracted
   const listSchema = z.object({ jobs: z.array(extractedJobListItemSchema) })
   return listSchema.parse(parsed).jobs
 }
+
+// Phase 4 — ranks raw Adzuna listings against the user's stated preferences.
+// The model only returns a score + reason keyed by id, never the listing
+// fields themselves — Adzuna's own data is already normalized, so there's
+// nothing to gain (and dedupe/salary accuracy to lose) by having the LLM
+// echo it back.
+export interface InternshipPreferences {
+  role         : string
+  positionType : string
+  location     : string
+}
+
+export interface RankInput {
+  id          : number
+  title       : string | null
+  company     : string | null
+  location    : string | null
+  description : string | null
+}
+
+export interface RankedListing {
+  id     : number
+  score  : number
+  reason : string
+}
+
+const rankingResultSchema = z.object({
+  rankings: z.array(z.object({
+    id     : z.number(),
+    score  : z.number(),
+    reason : z.string(),
+  })),
+})
+
+const RANKING_PROMPT = `You rank a list of job listings against a candidate's stated preferences.
+
+Input is a JSON object: { "preferences": { "role": string, "positionType": string, "location": string }, "listings": [{ "id": number, "title": string|null, "company": string|null, "location": string|null, "description": string|null }] }
+
+Return ONLY a JSON object with exactly one key, "rankings", holding an array. Each element must have exactly these keys:
+- "id": the listing's id, copied exactly from the input
+- "score": an integer 0-100 for how well the listing matches the stated role, position type, and location preferences (100 = excellent match)
+- "reason": a short (under 20 words) explanation of the score
+
+Rules:
+- Include every listing id from the input exactly once.
+- Score listings that clearly don't match the stated role or position type low (below 30).
+- Treat "Remote" as compatible with any stated location preference.
+- Output raw JSON only — no markdown fences, no commentary.`
+
+export async function rankInternshipListings(
+  listings: RankInput[],
+  preferences: InternshipPreferences,
+): Promise<RankedListing[]> {
+  const payload = JSON.stringify({ preferences, listings })
+  const parsed = await callExtractionModel(RANKING_PROMPT, payload)
+  return rankingResultSchema.parse(parsed).rankings
+}
